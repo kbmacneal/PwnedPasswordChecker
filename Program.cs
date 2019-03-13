@@ -15,28 +15,36 @@ namespace pwnedpasswordchecker
         {
             string password = args[0];
 
-            Console.WriteLine("Your Hashed Password:");
+            Console.Write ("Your Hashed Password ");
+            Console.Write (Hash (password));
+            Console.WriteLine ();
 
-            Console.WriteLine(Hash(password));
+            Console.Write ("Has been cracked ");
+            var times = makeRequest (Hash (password)).GetAwaiter ().GetResult ().Sum (e => e.Value);
+            Console.Write (times);
+            Console.Write (" times.");
+            Console.WriteLine ();
 
-            Console.Write("Has been cracked ");
-            Console.Write(makeRequest(Hash(password)).GetAwaiter().GetResult().Sum(e=>e.Value));
-            Console.Write(" times.");
-            Console.WriteLine();
+            if(times > 0) Console.WriteLine("DO NOT USE THIS PASSWORD.");
         }
 
-        public static async Task<Dictionary<string,int>> makeRequest(string hash)
+        public static async Task<Dictionary<string, int>> makeRequest (string hash)
         {
             var base_url = "https://api.pwnedpasswords.com/range";
 
-            Dictionary<string,int> rtn = new Dictionary<string, int>();
+            Dictionary<string, int> rtn = new Dictionary<string, int> ();
 
             var result = await base_url
-                .AppendPathSegment (hash.Substring(0,5))
-                .GetAsync()
+                .AppendPathSegment (hash.Substring (0, 5))
+                .GetAsync ()
                 .ReceiveString ();
 
-            result.Split(System.Environment.NewLine).ToList().ForEach(e=>rtn.Add(e.Split(":")[0],Int32.Parse(e.Split(":")[1])));
+            result.Split (System.Environment.NewLine).ToList ().Where (e => hash.Substring (5).ToUpper() == e.Split(":")[0]).ToList ().ForEach (e => rtn.Add (e.Split (":") [0], Int32.Parse (e.Split (":") [1])));
+
+            if (rtn.Count == 0)
+            {
+                rtn.Add ("NEVERCRACKED", 0);
+            }
 
             return rtn;
         }
